@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="midnight" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Coco Chat - Global Cloud Messaging</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        theme: {
+                            base: 'var(--bg-base)',
+                            surface: 'var(--bg-surface)',
+                            card: 'var(--bg-card)',
+                            input: 'var(--bg-input)',
+                            border: 'var(--border-subtle)',
+                            strongBorder: 'var(--border-strong)',
+                            text: 'var(--text-main)',
+                            muted: 'var(--text-muted)',
+                            accent: 'var(--accent)',
+                            accentHover: 'var(--accent-hover)',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- GunDB Decentralized Realtime Cloud Sync Across Any Data Network -->
+    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+    
+    <style>
+        :root, [data-theme="midnight"] {
+            --bg-base: #020617; --bg-surface: #0f172a; --bg-card: #1e293b; --bg-input: #070d1d;
+            --border-subtle: #1e293b; --border-strong: #334155; --text-main: #f8fafc; --text-muted: #94a3b8;
+            --accent: #ec4899; --accent-hover: #db2777; --accent-gradient: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+        }
+        [data-theme="cyber"] {
+            --bg-base: #09090b; --bg-surface: #18181b; --bg-card: #27272a; --bg-input: #0f0f11;
+            --border-subtle: #27272a; --border-strong: #3f3f46; --text-main: #fafafa; --text-muted: #a1a1aa;
+            --accent: #06b6d4; --accent-hover: #0891b2; --accent-gradient: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+        }
+        [data-theme="emerald"] {
+            --bg-base: #022c22; --bg-surface: #064e3b; --bg-card: #047857; --bg-input: #022c22;
+            --border-subtle: #065f46; --border-strong: #047857; --text-main: #ecfdf5; --text-muted: #6ee7b7;
+            --accent: #10b981; --accent-hover: #059669; --accent-gradient: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);
+        }
+        [data-theme="sunset"] {
+            --bg-base: #1f130c; --bg-surface: #2d1a10; --bg-card: #3d2517; --bg-input: #170d08;
+            --border-subtle: #4a2e1c; --border-strong: #5c3a24; --text-main: #fff7ed; --text-muted: #fdba74;
+            --accent: #f97316; --accent-hover: #ea580c; --accent-gradient: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+        }
+        [data-theme="indigo"] {
+            --bg-base: #0f0f1a; --bg-surface: #17172e; --bg-card: #232342; --bg-input: #0a0a12;
+            --border-subtle: #2b2b52; --border-strong: #3b3b6e; --text-main: #e0e7ff; --text-muted: #93c5fd;
+            --accent: #6366f1; --accent-hover: #4f46e5; --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        }
+        [data-theme="oled"] {
+            --bg-base: #000000; --bg-surface: #0a0a0a; --bg-card: #141414; --bg-input: #050505;
+            --border-subtle: #222222; --border-strong: #333333; --text-main: #ffffff; --text-muted: #888888;
+            --accent: #ffffff; --accent-hover: #cccccc; --accent-gradient: linear-gradient(135deg, #ffffff 0%, #777777 100%);
+        }
+        [data-theme="light"] {
+            --bg-base: #f1f5f9; --bg-surface: #ffffff; --bg-card: #e2e8f0; --bg-input: #f8fafc;
+            --border-subtle: #cbd5e1; --border-strong: #94a3b8; --text-main: #0f172a; --text-muted: #64748b;
+            --accent: #db2777; --accent-hover: #be185d; --accent-gradient: linear-gradient(135deg, #db2777 0%, #7c3aed 100%);
+        }
+
+        html, body {
+            height: 100%; height: 100dvh; min-height: -webkit-fill-available;
+            overflow: hidden; background-color: var(--bg-base); color: var(--text-main);
+            font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+        }
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 9999px; }
+        .app-bg-surface { background-color: var(--bg-surface); }
+        .app-bg-card { background-color: var(--bg-card); }
+        .app-bg-input { background-color: var(--bg-input); }
+        .app-border { border-color: var(--border-subtle); }
+        .app-text-muted { color: var(--text-muted); }
+        .app-text-main { color: var(--text-main); }
+        .app-accent-bg { background-color: var(--accent); }
+        .app-accent-text { color: var(--accent); }
+        .gradient-brand-header { background: var(--accent-gradient); }
+        @keyframes fadeInSlide { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .message-anim { animation: fadeInSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        input, select, textarea { font-size: 16px !important; }
+        @media (min-width: 768px) { input, select, textarea { font-size: 14px !important; } }
+    </style>
+</head>
+<body class="h-full flex flex-col">
+
+    <!-- AUTHENTICATION SCREEN -->
+    <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+        <div class="relative w-full max-w-md app-bg-surface app-border border rounded-3xl shadow-2xl p-6 sm:p-7 overflow-hidden my-auto">
+            <div class="absolute top-0 left-0 right-0 h-1.5 gradient-brand-header"></div>
+            <div class="text-center mb-5 sm:mb-6">
+                <div class="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl mb-2 sm:mb-3 shadow-lg gradient-brand-header text-white text-2xl font-bold">
+                    <i class="fa-solid fa-comments"></i>
+                </div>
+                <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight app-text-main">Coco Chat</h1>
+                <p class="app-text-muted text-xs mt-1">Global Cloud Messaging across Mobile Data & Wi-Fi</p>
+            </div>
+
+            <!-- Mode Selection Tabs -->
+            <div class="flex app-bg-input p-1 rounded-2xl mb-4 sm:mb-5 app-border border">
+                <button type="button" onclick="setAuthMode('login')" id="tab-login" class="flex-1 py-2 text-xs font-semibold rounded-xl transition app-accent-bg text-white shadow">Sign In</button>
+                <button type="button" onclick="setAuthMode('signup')" id="tab-signup" class="flex-1 py-2 text-xs font-semibold rounded-xl transition app-text-muted hover:text-white">Create Account</button>
+            </div>
+
+            <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-3 sm:space-y-4">
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider app-text-muted mb-1">Username <span class="text-rose-400">*</span></label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center app-text-muted text-sm"><i class="fa-solid fa-at"></i></span>
+                        <input type="text" id="auth-username" required placeholder="e.g. khushal" autocomplete="username" class="w-full pl-9 pr-4 py-2.5 app-bg-input app-border border rounded-xl focus:outline-none focus:border-pink-500 app-text-main placeholder:text-slate-500 text-sm transition">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold uppercase tracking-wider app-text-muted mb-1">Password <span class="text-rose-400">*</span></label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center app-text-muted text-sm"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" id="auth-password" required placeholder="Enter password" autocomplete="current-password" class="w-full pl-9 pr-4 py-2.5 app-bg-input app-border border rounded-xl focus:outline-none focus:border-pink-500 app-text-main placeholder:text-slate-500 text-sm transition">
+                    </div>
+                </div>
+                <div id="auth-feedback" class="p-2.5 rounded-xl bg-slate-800/50 border app-border text-xs text-center font-medium app-text-muted hidden"></div>
+                <button type="submit" id="auth-submit-btn" class="w-full gradient-brand-header hover:opacity-95 text-white font-semibold py-3 rounded-xl transition shadow-lg text-sm flex items-center justify-center space-x-2">
+                    <span id="auth-btn-text">Sign In</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="main-app" class="hidden flex-1 flex overflow-hidden w-full h-full">
+        <!-- SIDEBAR -->
+        <aside id="app-sidebar" class="w-full md:w-80 lg:w-88 app-bg-surface app-border border-r flex flex-col z-20 shrink-0 h-full transition-all duration-200">
+            
+            <!-- PROMINENT PROFILE BANNER -->
+            <div class="p-3.5 app-border border-b app-bg-card/40 flex items-center justify-between shrink-0">
+                <div onclick="openProfileModal()" class="flex items-center space-x-3 overflow-hidden cursor-pointer group flex-1">
+                    <div class="relative shrink-0">
+                        <div id="user-avatar" class="w-11 h-11 rounded-2xl gradient-brand-header flex items-center justify-center font-bold text-white shadow-md text-base">C</div>
+                        <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-900 rounded-full animate-pulse"></span>
+                    </div>
+                    <div class="overflow-hidden">
+                        <div class="flex items-center space-x-1">
+                            <span class="text-[10px] font-bold uppercase tracking-wider app-text-muted">My Profile</span>
+                            <i class="fa-solid fa-chevron-right text-[9px] app-text-muted group-hover:translate-x-0.5 transition"></i>
+                        </div>
+                        <h3 id="current-username-display" class="font-extrabold text-sm app-text-main leading-tight truncate group-hover:app-accent-text transition">@user</h3>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-1.5 shrink-0">
+                    <button onclick="openProfileModal()" title="View Profile" class="w-8 h-8 rounded-xl app-bg-card app-border border hover:app-accent-bg hover:text-white app-text-muted flex items-center justify-center transition shadow-sm"><i class="fa-solid fa-id-card text-xs"></i></button>
+                    <button onclick="logout()" title="Log Out" class="w-8 h-8 rounded-xl app-bg-card app-border border text-rose-400 hover:bg-rose-600 hover:text-white flex items-center justify-center transition shadow-sm"><i class="fa-solid fa-right-from-bracket text-xs"></i></button>
+                </div>
+            </div>
+
+            <!-- THEME & QUICK CONNECT CONTROLS -->
+            <div class="p-3 app-border border-b flex items-center space-x-2 shrink-0">
+                <button onclick="openConnectModal()" class="flex-1 py-2.5 px-3 rounded-xl gradient-brand-header text-white text-xs font-semibold flex items-center justify-center space-x-2 shadow-md hover:opacity-95 transition">
+                    <i class="fa-solid fa-comment-medical text-sm"></i>
+                    <span>Connect Username</span>
+                </button>
+                <select id="theme-selector" onchange="changeTheme(this.value)" title="Choose Theme" class="text-xs app-bg-card app-border border app-text-main rounded-xl px-2.5 py-2.5 focus:outline-none cursor-pointer shrink-0">
+                    <option value="midnight">🌙 Midnight</option>
+                    <option value="cyber">⚡ Cyber Neon</option>
+                    <option value="emerald">🌿 Emerald Zen</option>
+                    <option value="sunset">🌅 Sunset Glow</option>
+                    <option value="indigo">💎 Royal Indigo</option>
+                    <option value="oled">🖤 OLED Black</option>
+                    <option value="light">☀️ Light</option>
+                </select>
+            </div>
+
+            <div class="flex px-3 py-2 app-border border-b text-xs font-semibold app-text-muted shrink-0">
+                <button onclick="switchSidebarTab('chats')" id="sidebar-tab-chats" class="flex-1 py-2 text-center rounded-lg app-bg-card app-text-main transition shadow-sm">Chats</button>
+                <button onclick="switchSidebarTab('bots')" id="sidebar-tab-bots" class="flex-1 py-2 text-center rounded-lg hover:text-white transition">Bots & AI</button>
+            </div>
+
+            <div id="sidebar-list-container" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+        </aside>
+
+        <!-- MAIN CHAT PANEL -->
+        <main id="app-main-chat" class="hidden md:flex flex-1 flex-col app-bg-base relative min-w-0 h-full w-full">
+            <header id="chat-header" class="h-16 px-3 sm:px-5 app-bg-surface/90 backdrop-blur app-border border-b flex items-center justify-between z-10 shrink-0">
+                <div class="flex items-center space-x-2 sm:space-x-3 overflow-hidden">
+                    <button onclick="backToSidebarOnMobile()" id="mobile-back-btn" class="md:hidden w-9 h-9 rounded-xl app-bg-card app-border border flex items-center justify-center text-slate-300 hover:text-white shrink-0 transition"><i class="fa-solid fa-arrow-left text-sm"></i></button>
+                    <div id="active-chat-avatar" class="w-10 h-10 rounded-xl gradient-brand-header text-white flex items-center justify-center font-bold text-sm shrink-0 shadow"><i class="fa-solid fa-hashtag"></i></div>
+                    <div class="overflow-hidden">
+                        <div class="flex items-center space-x-1.5 sm:space-x-2">
+                            <h2 id="active-chat-name" class="font-bold text-sm app-text-main truncate">Select a chat</h2>
+                        </div>
+                        <p id="active-chat-status" class="text-[11px] sm:text-xs app-text-muted flex items-center truncate">Cloud Sync Active</p>
+                    </div>
+                </div>
+            </header>
+
+            <div id="messages-scroll-area" class="flex-1 p-3 sm:p-5 overflow-y-auto space-y-3 flex flex-col"></div>
+            <div id="typing-indicator-bar" class="px-4 py-0.5 text-xs app-accent-text italic h-5 flex items-center shrink-0"></div>
+
+            <footer class="p-2.5 sm:p-4 app-bg-surface app-border border-t relative z-10 shrink-0 pb-safe">
+                <form id="message-form" onsubmit="handleSendMessage(event)" class="flex items-center space-x-1.5 sm:space-x-2">
+                    <input type="text" id="message-input" placeholder="Type a message..." class="flex-1 py-2 px-3 sm:px-4 app-bg-input app-border border rounded-xl text-sm app-text-main placeholder:text-slate-500 focus:outline-none focus:border-pink-500 transition">
+                    <button type="submit" class="gradient-brand-header text-white w-10 h-9 sm:w-11 sm:h-10 rounded-xl flex items-center justify-center transition shadow-lg hover:opacity-95 shrink-0"><i class="fa-solid fa-paper-plane text-xs sm:text-sm"></i></button>
+                </form>
+            </footer>
+        </main>
+    </div>
+
+    <!-- MODALS -->
+    <!-- PROFILE MODAL -->
+    <div id="profile-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 hidden overflow-y-auto">
+        <div class="app-bg-surface app-border border rounded-3xl w-full max-w-md p-6 shadow-2xl relative my-auto">
+            <div class="absolute top-0 left-0 right-0 h-1.5 gradient-brand-header"></div>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-base app-text-main flex items-center space-x-2"><i class="fa-solid fa-id-badge app-accent-text"></i><span>My Profile Details</span></h3>
+                <button onclick="closeProfileModal()" class="w-8 h-8 rounded-lg app-bg-card app-text-muted hover:text-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="text-center py-4 app-bg-input rounded-2xl app-border border mb-4">
+                <div id="profile-modal-avatar" class="w-16 h-16 rounded-2xl gradient-brand-header text-white text-2xl font-bold flex items-center justify-center mx-auto mb-2 shadow-lg">C</div>
+                <h2 id="profile-modal-username" class="font-extrabold text-lg app-text-main">@user</h2>
+                <span class="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-semibold">Online & Connected</span>
+            </div>
+
+            <div class="space-y-3 text-xs mb-5">
+                <div class="flex items-center justify-between p-3 app-bg-input app-border border rounded-xl">
+                    <span class="app-text-muted">Network Protocol:</span>
+                    <span class="app-text-main font-semibold">GunDB Cloud Relay</span>
+                </div>
+                <div class="flex items-center justify-between p-3 app-bg-input app-border border rounded-xl">
+                    <span class="app-text-muted">Account Security:</span>
+                    <span class="app-text-main font-semibold">Local & Cloud Synced</span>
+                </div>
+            </div>
+
+            <div class="flex space-x-2">
+                <button onclick="copyMyUsername()" class="flex-1 py-3 app-bg-card app-border border hover:app-accent-bg hover:text-white app-text-main font-semibold rounded-xl text-xs transition flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-copy"></i>
+                    <span>Copy Username</span>
+                </button>
+                <button onclick="closeProfileModal()" class="flex-1 py-3 gradient-brand-header text-white font-semibold rounded-xl text-xs shadow hover:opacity-95 transition">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONNECT MODAL -->
+    <div id="connect-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 hidden overflow-y-auto">
+        <div class="app-bg-surface app-border border rounded-3xl w-full max-w-md p-5 sm:p-6 shadow-2xl relative my-auto flex flex-col">
+            <div class="absolute top-0 left-0 right-0 h-1 gradient-brand-header"></div>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-base app-text-main">Connect with Username</h3>
+                <button onclick="closeConnectModal()" class="w-8 h-8 rounded-lg app-bg-card app-text-muted hover:text-white flex items-center justify-center"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-4">
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center app-text-muted text-sm font-semibold">@</span>
+                    <input type="text" id="connect-username-input" placeholder="e.g. friend_username" class="w-full pl-9 pr-24 py-2.5 app-bg-input app-border border rounded-xl text-sm app-text-main focus:outline-none focus:border-pink-500">
+                    <button onclick="executeConnectUser()" class="absolute right-1.5 top-1.5 bottom-1.5 px-3 gradient-brand-header text-white text-xs font-semibold rounded-lg">Connect</button>
+                </div>
+                <div>
+                    <span class="text-[11px] font-bold uppercase tracking-wider app-text-muted">Available Users & Bots</span>
+                    <div id="connect-suggestions-list" class="max-h-48 overflow-y-auto space-y-2 mt-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="fixed bottom-4 right-4 left-4 sm:left-auto sm:right-6 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <script>
+        const DB_KEYS = { USERS: 'cocochat_users_v13', CONVERSATIONS: 'cocochat_convs_v13', CURRENT_USER: 'cocochat_active_v13', THEME: 'cocochat_theme_v13' };
+        let currentUser = null, activeSidebarTab = 'chats', activeChat = { id: 'coco_bot', name: 'coco_bot', type: 'bot' };
+        let currentAuthMode = 'login';
+        let gunInstance = null;
+
+        const DEFAULT_BOTS = [
+            { username: 'coco_bot', password: '123', status: 'AI Assistant 🤖' },
+            { username: 'pixel_pal', password: '123', status: 'Design Bot 🎨' },
+            { username: 'speedy_dev', password: '123', status: 'Code Bot ⚡' },
+            { username: 'quiz_master', password: '123', status: 'Trivia Bot 🧠' },
+            { username: 'music_vibe', password: '123', status: 'DJ Bot 🎧' }
+        ];
+
+        try {
+            gunInstance = Gun([
+                'https://gun-manhattan.herokuapp.com/gun',
+                'https://relay.peer.ooo/gun',
+                'https://gundb-multihost.herokuapp.com/gun'
+            ]);
+        } catch(e) {}
+
+        function getStoredUsers() {
+            try {
+                const raw = localStorage.getItem(DB_KEYS.USERS);
+                if (raw) return JSON.parse(raw);
+            } catch(e) {}
+            return DEFAULT_BOTS;
+        }
+
+        function saveUsers(users) { localStorage.setItem(DB_KEYS.USERS, JSON.stringify(users)); }
+
+        function getStoredConversations() {
+            try {
+                const raw = localStorage.getItem(DB_KEYS.CONVERSATIONS);
+                if (raw) return JSON.parse(raw);
+            } catch(e) {}
+            return {
+                'coco_bot': { id: 'coco_bot', name: 'coco_bot', type: 'bot', participants: ['coco_bot'], messages: [{ id: 'm1', sender: 'coco_bot', text: 'Hello! I am Coco Bot. How can I help you today?', timestamp: '10:00 AM' }] }
+            };
+        }
+
+        function saveConversations(convs) { localStorage.setItem(DB_KEYS.CONVERSATIONS, JSON.stringify(convs)); }
+        function getDirectChatId(a, b) { return [a.toLowerCase(), b.toLowerCase()].sort().join('_'); }
+
+        function setAuthMode(mode) {
+            currentAuthMode = mode;
+            const loginBtn = document.getElementById('tab-login');
+            const signupBtn = document.getElementById('tab-signup');
+            const btnText = document.getElementById('auth-btn-text');
+            const feedback = document.getElementById('auth-feedback');
+            feedback.classList.add('hidden');
+
+            if (mode === 'login') {
+                loginBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-xl transition app-accent-bg text-white shadow';
+                signupBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-xl transition app-text-muted hover:text-white';
+                btnText.innerText = 'Sign In';
+            } else {
+                signupBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-xl transition app-accent-bg text-white shadow';
+                loginBtn.className = 'flex-1 py-2 text-xs font-semibold rounded-xl transition app-text-muted hover:text-white';
+                btnText.innerText = 'Create Account';
+            }
+        }
+
+        function initNetworkSync(username) {
+            const cleanUser = username.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+            if (gunInstance) {
+                gunInstance.get('cocochat_cloudbox_' + cleanUser).map().on((msgData) => {
+                    if (msgData && msgData.sender && msgData.sender !== currentUser.username) {
+                        handleIncomingCloudMessage(msgData.sender, msgData);
+                    }
+                });
+
+                setInterval(() => {
+                    if (!currentUser) return;
+                    gunInstance.get('cocochat_cloudbox_' + cleanUser).once((data) => {
+                        if (data) {
+                            Object.values(data).forEach(msgData => {
+                                if (msgData && msgData.sender && msgData.sender !== currentUser.username) {
+                                    handleIncomingCloudMessage(msgData.sender, msgData);
+                                }
+                            });
+                        }
+                    });
+                }, 2000);
+
+                gunInstance.get('cocochat_global_directory').get(cleanUser).put({ username: cleanUser, active: Date.now() });
+                gunInstance.get('cocochat_global_directory').map().on((userData) => {
+                    if (userData && userData.username) {
+                        const users = getStoredUsers();
+                        if (!users.some(u => u.username.toLowerCase() === userData.username.toLowerCase())) {
+                            users.push({ username: userData.username, password: '123', status: 'Cloud User 🌐' });
+                            saveUsers(users);
+                            renderConnectSuggestions();
+                        }
+                    }
+                });
+            }
+        }
+
+        function handleIncomingCloudMessage(sender, msg) {
+            if (!currentUser) return;
+            const chatId = getDirectChatId(currentUser.username, sender);
+            const convs = getStoredConversations();
+            if (!convs[chatId]) {
+                convs[chatId] = { id: chatId, name: sender, type: 'direct', participants: [currentUser.username, sender], messages: [] };
+            }
+            if (!convs[chatId].messages.some(m => m.id === msg.id)) {
+                convs[chatId].messages.push(msg);
+                saveConversations(convs);
+                if (activeChat.id === chatId) renderMessages();
+                renderSidebar();
+                showToast(`New message from @${sender}`, 'info');
+            }
+        }
+
+        function broadcastCloudMessage(targetUsername, messageObj) {
+            const cleanTarget = targetUsername.toLowerCase().replace(/[^a-z0-9_-]/g, '');
+            if (gunInstance) {
+                gunInstance.get('cocochat_cloudbox_' + cleanTarget).get(messageObj.id).put(messageObj);
+                gunInstance.get('cocochat_cloudbox_' + currentUser.username.toLowerCase()).get(messageObj.id).put(messageObj);
+                gunInstance.get('cocochat_global_directory').get(cleanTarget).put({ username: cleanTarget, active: Date.now() });
+            }
+        }
+
+        function changeTheme(themeName) {
+            document.documentElement.setAttribute('data-theme', themeName);
+            localStorage.setItem(DB_KEYS.THEME, themeName);
+            const selector = document.getElementById('theme-selector');
+            if (selector) selector.value = themeName;
+        }
+
+        function handleAuthSubmit(e) {
+            e.preventDefault();
+            const uInput = document.getElementById('auth-username').value.trim().toLowerCase();
+            const pInput = document.getElementById('auth-password').value.trim();
+            const feedback = document.getElementById('auth-feedback');
+            if (!uInput || !pInput) return;
+
+            let users = getStoredUsers();
+            let existingUser = users.find(u => u.username.toLowerCase() === uInput);
+
+            if (currentAuthMode === 'signup') {
+                if (existingUser) {
+                    feedback.className = 'p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs text-center font-medium';
+                    feedback.innerText = 'Username already exists! Please choose another.';
+                    feedback.classList.remove('hidden');
+                    return;
+                }
+                const newUser = { username: uInput, password: pInput, status: 'Active 🚀' };
+                users.push(newUser);
+                saveUsers(users);
+                if (gunInstance) {
+                    gunInstance.get('cocochat_global_directory').get(uInput).put({ username: uInput, active: Date.now() });
+                }
+                loginUser(newUser);
+                showToast(`Account @${uInput} created successfully!`, 'success');
+            } else {
+                if (!existingUser) {
+                    const newUser = { username: uInput, password: pInput, status: 'Active 🚀' };
+                    users.push(newUser);
+                    saveUsers(users);
+                    loginUser(newUser);
+                } else {
+                    loginUser(existingUser);
+                }
+            }
+        }
+
+        function loginUser(userObj) {
+            currentUser = userObj;
+            localStorage.setItem(DB_KEYS.CURRENT_USER, userObj.username);
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            document.getElementById('current-username-display').innerText = `@${userObj.username}`;
+            document.getElementById('user-avatar').innerText = userObj.username.charAt(0).toUpperCase();
+            initNetworkSync(userObj.username);
+            selectChat({ id: 'coco_bot', name: 'coco_bot', type: 'bot' });
+            renderSidebar();
+            showToast(`Logged in as @${userObj.username}`, 'success');
+        }
+
+        function logout() {
+            localStorage.removeItem(DB_KEYS.CURRENT_USER);
+            location.reload();
+        }
+
+        function openProfileModal() {
+            if (!currentUser) return;
+            document.getElementById('profile-modal-username').innerText = `@${currentUser.username}`;
+            document.getElementById('profile-modal-avatar').innerText = currentUser.username.charAt(0).toUpperCase();
+            document.getElementById('profile-modal').classList.remove('hidden');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profile-modal').classList.add('hidden');
+        }
+
+        function copyMyUsername() {
+            if (!currentUser) return;
+            navigator.clipboard.writeText(currentUser.username).then(() => {
+                showToast(`Copied @${currentUser.username} to clipboard!`, 'success');
+            });
+        }
+
+        function switchSidebarTab(tab) {
+            activeSidebarTab = tab;
+            document.getElementById('sidebar-tab-chats').className = tab === 'chats' ? 'flex-1 py-2 text-center rounded-lg app-bg-card app-text-main transition shadow-sm' : 'flex-1 py-2 text-center rounded-lg hover:text-white transition';
+            document.getElementById('sidebar-tab-bots').className = tab === 'bots' ? 'flex-1 py-2 text-center rounded-lg app-bg-card app-text-main transition shadow-sm' : 'flex-1 py-2 text-center rounded-lg hover:text-white transition';
+            renderSidebar();
+        }
+
+        function selectChat(chat) {
+            activeChat = chat;
+            const convs = getStoredConversations();
+            if (!convs[chat.id]) {
+                convs[chat.id] = { id: chat.id, name: chat.name, type: chat.type, participants: [currentUser.username, chat.name], messages: [] };
+                saveConversations(convs);
+            }
+            document.getElementById('active-chat-name').innerText = `@${chat.name}`;
+            renderMessages();
+            renderSidebar();
+            if (window.innerWidth < 768) {
+                document.getElementById('app-sidebar').classList.add('hidden');
+                document.getElementById('app-main-chat').classList.remove('hidden');
+            }
+        }
+
+        function backToSidebarOnMobile() {
+            document.getElementById('app-sidebar').classList.remove('hidden');
+            document.getElementById('app-main-chat').classList.add('hidden');
+        }
+
+        function renderMessages() {
+            const scrollArea = document.getElementById('messages-scroll-area');
+            scrollArea.innerHTML = '';
+            const convs = getStoredConversations();
+            const conv = convs[activeChat.id];
+            if (!conv || !conv.messages) return;
+
+            conv.messages.forEach(msg => {
+                const isSelf = msg.sender === currentUser.username;
+                const div = document.createElement('div');
+                div.className = `flex flex-col ${isSelf ? 'items-end' : 'items-start'} space-y-1 message-anim`;
+                div.innerHTML = `
+                    <span class="text-[10px] app-text-muted">@${msg.sender}</span>
+                    <div class="px-3.5 py-2.5 rounded-2xl max-w-[85%] text-xs sm:text-sm ${isSelf ? 'app-accent-bg text-white' : 'app-bg-card app-text-main'}">${msg.text}</div>
+                `;
+                scrollArea.appendChild(div);
+            });
+            scrollArea.scrollTop = scrollArea.scrollHeight;
+        }
+
+        function handleSendMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const newMsg = { id: 'm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4), sender: currentUser.username, text: text, timestamp: timeStr };
+
+            const convs = getStoredConversations();
+            if (!convs[activeChat.id]) convs[activeChat.id] = { id: activeChat.id, name: activeChat.name, type: activeChat.type, participants: [currentUser.username, activeChat.name], messages: [] };
+            
+            if (!convs[activeChat.id].messages.some(m => m.id === newMsg.id)) {
+                convs[activeChat.id].messages.push(newMsg);
+                saveConversations(convs);
+            }
+
+            input.value = '';
+            renderMessages();
+            renderSidebar();
+
+            if (activeChat.type === 'bot') {
+                setTimeout(() => {
+                    const botReplies = [
+                        `Got it! "${text}" is noted by ${activeChat.name}.`,
+                        `That's awesome! Let me know if you need any further assistance.`,
+                        `Received loud and clear across the global cloud network!`
+                    ];
+                    const replyText = botReplies[Math.floor(Math.random() * botReplies.length)];
+                    convs[activeChat.id].messages.push({ id: 'bot_' + Date.now(), sender: activeChat.name, text: replyText, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
+                    saveConversations(convs);
+                    renderMessages();
+                }, 600);
+            } else if (activeChat.type === 'direct') {
+                broadcastCloudMessage(activeChat.name, newMsg);
+            }
+        }
+
+        function renderSidebar() {
+            const container = document.getElementById('sidebar-list-container');
+            container.innerHTML = '';
+            const users = getStoredUsers();
+
+            if (activeSidebarTab === 'bots') {
+                users.filter(u => DEFAULT_BOTS.some(b => b.username === u.username)).forEach(bot => {
+                    const div = document.createElement('div');
+                    div.className = 'p-3 rounded-xl cursor-pointer hover:app-bg-card flex items-center justify-between app-border border mb-1';
+                    div.onclick = () => selectChat({ id: bot.username, name: bot.username, type: 'bot' });
+                    div.innerHTML = `<div><span class="font-bold text-xs block">@${bot.username}</span><span class="text-[10px] app-accent-text">${bot.status}</span></div><i class="fa-solid fa-chevron-right text-xs app-text-muted"></i>`;
+                    container.appendChild(div);
+                });
+            } else {
+                const convs = getStoredConversations();
+                Object.values(convs).forEach(chat => {
+                    const other = chat.participants.find(p => p !== currentUser.username) || chat.name;
+                    const div = document.createElement('div');
+                    div.className = 'p-2.5 rounded-xl cursor-pointer hover:app-bg-card flex items-center justify-between';
+                    div.onclick = () => selectChat({ id: chat.id, name: other, type: chat.type || 'direct' });
+                    div.innerHTML = `<span class="font-bold text-xs">@${other}</span><span class="text-[10px] app-text-muted">Active Chat</span>`;
+                    container.appendChild(div);
+                });
+            }
+        }
+
+        function openConnectModal() { document.getElementById('connect-modal').classList.remove('hidden'); renderConnectSuggestions(); }
+        function closeConnectModal() { document.getElementById('connect-modal').classList.add('hidden'); }
+        function renderConnectSuggestions() {
+            const list = document.getElementById('connect-suggestions-list');
+            list.innerHTML = '';
+            getStoredUsers().filter(u => u.username !== currentUser?.username).forEach(u => {
+                const item = document.createElement('div');
+                item.className = 'p-2 rounded-xl app-bg-input flex items-center justify-between cursor-pointer';
+                item.onclick = () => { initiateDirectChatWith(u.username); closeConnectModal(); };
+                item.innerHTML = `<div><span class="text-xs font-bold block">@${u.username}</span><span class="text-[10px] app-text-muted">${u.status}</span></div><span class="text-xs app-accent-text">Chat</span>`;
+                list.appendChild(item);
+            });
+        }
+
+        function executeConnectUser() {
+            const target = document.getElementById('connect-username-input').value.trim().replace(/^@/, '').toLowerCase();
+            if (target) {
+                closeConnectModal();
+                initiateDirectChatWith(target);
+            }
+        }
+
+        function initiateDirectChatWith(targetUsername) {
+            const chatId = getDirectChatId(currentUser.username, targetUsername);
+            const convs = getStoredConversations();
+            const isBot = DEFAULT_BOTS.some(b => b.username === targetUsername);
+            if (!convs[chatId]) {
+                convs[chatId] = { id: chatId, name: targetUsername, type: isBot ? 'bot' : 'direct', participants: [currentUser.username, targetUsername], messages: [] };
+                saveConversations(convs);
+            }
+            selectChat({ id: chatId, name: targetUsername, type: isBot ? 'bot' : 'direct' });
+        }
+
+        function showToast(msg) {
+            const c = document.getElementById('toast-container');
+            if (!c) return;
+            const t = document.createElement('div');
+            t.className = 'app-bg-surface app-border border px-4 py-2 rounded-xl text-xs shadow-lg';
+            t.innerText = msg;
+            c.appendChild(t);
+            setTimeout(() => t.remove(), 2500);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem(DB_KEYS.THEME) || 'midnight';
+            changeTheme(savedTheme);
+            setAuthMode('login');
+
+            const savedUser = localStorage.getItem(DB_KEYS.CURRENT_USER);
+            if (savedUser) {
+                const user = getStoredUsers().find(u => u.username === savedUser);
+                if (user) loginUser(user);
+            }
+        });
+    </script>
+</body>
+</html>
